@@ -1,15 +1,21 @@
-import express, { Application, Request, Response } from "express";
+import express, { Application } from "express";
+import { graphqlHTTP } from "express-graphql";
+import { schema } from "./schema";
+import { connect } from "./utils/db.util";
 
 const app: Application = express();
 
 const PORT = process.env.PORT || 8080;
 
-app.get("/", (req: Request, res: Response): void => {
-  res.send("Hello Typescript with Node.js!");
-});
+connect()
+  .then(() => {
+    app.use("/graphql", graphqlHTTP({ schema: schema, graphiql: true }));
 
-app.listen(PORT, (): void => {
-  console.log(`Server running here https://localhost:${PORT}`);
-});
-
-
+    app.listen(PORT, () => {
+      console.log(`Server running here https://localhost:${PORT}`);
+    });
+  })
+  .catch((error: Error) => {
+    console.error("Database connection failed", error);
+    process.exit();
+  });
