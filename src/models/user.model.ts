@@ -1,7 +1,6 @@
 import { IsEmail, MaxLength, MinLength } from "class-validator";
 import { ObjectId } from "mongodb";
 import {
-  Authorized,
   Field,
   ID,
   InputType,
@@ -54,11 +53,11 @@ export default class User {
   user_name: string;
 
   @Field()
-  //   @Authorized(Role.ADMIN)
+  // @Authorized(Role.admin)
   active: boolean;
 
   @Field(() => Role)
-  //   @Authorized(Role.ADMIN)
+  // @Authorized(Role.admin)
   role: Role;
 }
 

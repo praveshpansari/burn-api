@@ -1,6 +1,6 @@
 {
   "name": "burn-api",
-  "version": "0.1.2",
+  "version": "0.1.1",
   "description": "",
   "scripts": {
     "start": "ts-node ./src/index.ts",
@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/bcrypt": "^5.0.0",
+    "@types/jsonwebtoken": "^8.5.9",
     "@types/lodash": "^4.14.186",
     "bcrypt": "^5.1.0",
     "class-validator": "^0.13.2",
@@ -21,6 +22,7 @@
     "graphql": "^15.8.0",
     "graphql-scalars": "^1.20.0",
     "inversify": "^6.0.1",
+    "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
     "mongodb": "^4.11.0",
     "reflect-metadata": "^0.1.13",

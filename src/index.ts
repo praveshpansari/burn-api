@@ -5,6 +5,7 @@ import { connect } from "./utils/db.util";
 import { buildSchema } from "type-graphql";
 import UserResolver from "./resolvers/user.resolver";
 import { ApplicationContainer } from "./ApplicationContainer";
+import AuthenticationResolver, { AuthPayload } from "./resolvers/auth.resolver";
 
 const app: Application = express();
 
@@ -13,10 +14,20 @@ const PORT = process.env.PORT || 8080;
 connect()
   .then(async () => {
     const schema = await buildSchema({
-      resolvers: [UserResolver],
+      resolvers: [UserResolver, AuthenticationResolver],
+      orphanedTypes: [AuthPayload],
       container: ApplicationContainer.createContainer(),
     });
-    app.use("/graphql", graphqlHTTP({ schema: schema, graphiql: true }));
+
+    const server = graphqlHTTP((req, res) => {
+      return {
+        schema: schema,
+        graphiql: { headerEditorEnabled: true },
+        context: { req, res },
+      };
+    });
+
+    app.use("/graphql", server);
 
     app.listen(PORT, () => {
       console.log(`Server running here https://localhost:${PORT}`);
