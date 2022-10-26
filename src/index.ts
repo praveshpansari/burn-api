@@ -1,14 +1,21 @@
+import "reflect-metadata";
 import express, { Application } from "express";
 import { graphqlHTTP } from "express-graphql";
-import { schema } from "./schema";
 import { connect } from "./utils/db.util";
+import { buildSchema } from "type-graphql";
+import UserResolver from "./resolvers/user.resolver";
+import { ApplicationContainer } from "./ApplicationContainer";
 
 const app: Application = express();
 
 const PORT = process.env.PORT || 8080;
 
 connect()
-  .then(() => {
+  .then(async () => {
+    const schema = await buildSchema({
+      resolvers: [UserResolver],
+      container: ApplicationContainer.createContainer(),
+    });
     app.use("/graphql", graphqlHTTP({ schema: schema, graphiql: true }));
 
     app.listen(PORT, () => {

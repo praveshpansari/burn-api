@@ -1,28 +1,50 @@
 import {
   GraphQLBoolean,
   GraphQLID,
+  GraphQLInt,
   GraphQLList,
   GraphQLObjectType,
   GraphQLSchema,
   GraphQLString,
+  GraphQLUnionType,
 } from "graphql";
-import { ObjectId } from "mongodb";
-import { isPresent } from "ts-is-present";
-import { getCollection } from "../utils/db.util";
+import UserResolver from "../resolvers/user.resolver";
+import {
+  GraphQLDateTime,
+  GraphQLJSON,
+  GraphQLJSONObject,
+} from "graphql-scalars";
+import { User } from "../models/user.model";
 
-const User = new GraphQLObjectType({
+const UserType = new GraphQLObjectType({
   name: "User",
   fields: {
     first_name: { type: GraphQLString, description: "First Name of the user" },
     last_name: { type: GraphQLString, description: "Last Name of the user" },
     email: { type: GraphQLString, description: "Email of the user" },
-    created_at: { type: GraphQLString, description: "Created at Timestamp" },
+    created_at: { type: GraphQLDateTime, description: "Created at Date" },
     _id: { type: GraphQLID, description: "Id of the user" },
     password: { type: GraphQLString, description: "Password of the user" },
-    updated_at: { type: GraphQLString, description: "Updated at Timestamp" },
+    updated_at: { type: GraphQLDateTime, description: "Updated at Date" },
     user_name: { type: GraphQLString, description: "Username" },
     active: { type: GraphQLBoolean, description: "Is the user active?" },
   },
+});
+
+const Error = new GraphQLObjectType({
+  name: "Error",
+  fields: {
+    type: { type: GraphQLString },
+    message: { type: GraphQLString },
+    code: { type: GraphQLInt },
+    info: { type: GraphQLJSONObject },
+    _id: { type: GraphQLID },
+  },
+});
+
+const crudUser = new GraphQLUnionType({
+  name: "CrudUser",
+  types: [UserType, Error],
 });
 
 export const UserSchema = new GraphQLSchema({
@@ -30,44 +52,42 @@ export const UserSchema = new GraphQLSchema({
     name: "Query",
     fields: {
       users: {
-        type: new GraphQLList(User),
-        resolve: async () =>
-          (await getCollection().users.find().toArray()).map((user) => {
-            return {
-              ...user,
-              created_at: new Date(
-                user.created_at.getHighBits() * 1000
-              ).toISOString(),
-              updated_at: new Date(
-                user.updated_at.getHighBits() * 1000
-              ).toISOString(),
-            };
-          }),
+        type: new GraphQLList(UserType),
+        resolve: async () => await UserResolver.getUsers(),
       },
       user: {
-        type: User,
+        type: UserType,
         args: {
           _id: { type: GraphQLString },
         },
-        resolve: async (_, { _id }) => {
-          const user = await getCollection().users.findOne({
-            _id: new ObjectId(_id),
-          });
-          return isPresent(user)
-            ? {
-                ...user,
-                created_at: new Date(
-                  user.created_at.getHighBits() * 1000
-                ).toISOString(),
-                updated_at: new Date(
-                  user.updated_at.getHighBits() * 1000
-                ).toISOString(),
-              }
-            : null;
+        resolve: async (_, { _id }) => await UserResolver.getUser(_id),
+      },
+    },
+  }),
+  mutation: new GraphQLObjectType({
+    name: "Mutation",
+    fields: {
+      user: {
+        type: crudUser,
+        args: {
+          body: { type: GraphQLJSON },
         },
+        resolve: async (_, { body }: { body: User }) =>
+          UserResolver.createUser(body),
+      },
+      updateUser: {
+        type: crudUser,
+        args: { _id: { type: GraphQLID }, body: { type: GraphQLJSON } },
+        resolve: async (_, { _id, body }: { _id: string; body: User }) =>
+          UserResolver.updateUser(_id, body),
+      },
+      deleteUser: {
+        type: crudUser,
+        args: { _id: { type: GraphQLID } },
+        resolve: async (_, { _id }) => UserResolver.deleteUser(_id),
       },
     },
   }),
 });
 
-export default User;
+export default UserType;
