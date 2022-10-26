@@ -1,4 +1,5 @@
 import {
+  GraphQLBoolean,
   GraphQLID,
   GraphQLList,
   GraphQLObjectType,
@@ -6,7 +7,8 @@ import {
   GraphQLString,
 } from "graphql";
 import { ObjectId } from "mongodb";
-import { collections } from "../utils/db.util";
+import { isPresent } from "ts-is-present";
+import { getCollection } from "../utils/db.util";
 
 const User = new GraphQLObjectType({
   name: "User",
@@ -14,8 +16,12 @@ const User = new GraphQLObjectType({
     first_name: { type: GraphQLString, description: "First Name of the user" },
     last_name: { type: GraphQLString, description: "Last Name of the user" },
     email: { type: GraphQLString, description: "Email of the user" },
-    created_at: { type: GraphQLString, description: "Timestamp" },
+    created_at: { type: GraphQLString, description: "Created at Timestamp" },
     _id: { type: GraphQLID, description: "Id of the user" },
+    password: { type: GraphQLString, description: "Password of the user" },
+    updated_at: { type: GraphQLString, description: "Updated at Timestamp" },
+    user_name: { type: GraphQLString, description: "Username" },
+    active: { type: GraphQLBoolean, description: "Is the user active?" },
   },
 });
 
@@ -26,11 +32,14 @@ export const UserSchema = new GraphQLSchema({
       users: {
         type: new GraphQLList(User),
         resolve: async () =>
-          (await collections.users?.find().toArray())?.map((user) => {
+          (await getCollection().users.find().toArray()).map((user) => {
             return {
               ...user,
               created_at: new Date(
                 user.created_at.getHighBits() * 1000
+              ).toISOString(),
+              updated_at: new Date(
+                user.updated_at.getHighBits() * 1000
               ).toISOString(),
             };
           }),
@@ -40,8 +49,22 @@ export const UserSchema = new GraphQLSchema({
         args: {
           _id: { type: GraphQLString },
         },
-        resolve: async (_, { _id }) =>
-          await collections.users?.findOne({ _id: new ObjectId(_id) }),
+        resolve: async (_, { _id }) => {
+          const user = await getCollection().users.findOne({
+            _id: new ObjectId(_id),
+          });
+          return isPresent(user)
+            ? {
+                ...user,
+                created_at: new Date(
+                  user.created_at.getHighBits() * 1000
+                ).toISOString(),
+                updated_at: new Date(
+                  user.updated_at.getHighBits() * 1000
+                ).toISOString(),
+              }
+            : null;
+        },
       },
     },
   }),

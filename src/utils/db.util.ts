@@ -3,7 +3,7 @@ import * as dotenv from "dotenv";
 import { Collection, Db, MongoClient } from "mongodb";
 import { isPresent } from "ts-is-present";
 
-export const collections: { users?: Collection } = {};
+let collections: { users: Collection };
 
 // Initialize Connection
 export async function connect() {
@@ -28,5 +28,10 @@ export async function connect() {
 }
 
 async function initCollections(db: Db) {
-  collections.users = db.collection("User");
+  const users = db.collection("User");
+  collections = { users };
+}
+
+export function getCollection() {
+  return collections;
 }
