@@ -6,6 +6,7 @@ import { buildSchema } from "type-graphql";
 import UserResolver from "./resolvers/user.resolver";
 import { ApplicationContainer } from "./ApplicationContainer";
 import AuthenticationResolver, { AuthPayload } from "./resolvers/auth.resolver";
+import cors from "cors";
 
 const app: Application = express();
 
@@ -26,7 +27,7 @@ connect()
         context: { req, res },
       };
     });
-
+    app.use(cors());
     app.use("/graphql", server);
 
     app.listen(PORT, () => {
